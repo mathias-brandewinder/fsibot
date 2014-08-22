@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30723.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "FsiBot", "FsiBot\FsiBot.ccproj", "{4E5E5726-4916-46EF-9982-19BAD2D19362}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "BotWorkerRole", "BotWorkerRole\BotWorkerRole.fsproj", "{C2AA912D-9768-400F-8E44-21D8689FC3B2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4E5E5726-4916-46EF-9982-19BAD2D19362}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E5E5726-4916-46EF-9982-19BAD2D19362}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E5E5726-4916-46EF-9982-19BAD2D19362}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E5E5726-4916-46EF-9982-19BAD2D19362}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2AA912D-9768-400F-8E44-21D8689FC3B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2AA912D-9768-400F-8E44-21D8689FC3B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2AA912D-9768-400F-8E44-21D8689FC3B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2AA912D-9768-400F-8E44-21D8689FC3B2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
