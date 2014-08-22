@@ -1,6 +1,7 @@
 ﻿namespace BotWorkerRole
 
 open System
+open System.IO
 open System.Collections.Generic
 open System.Diagnostics
 open System.Linq
@@ -9,6 +10,7 @@ open System.Threading
 open Microsoft.WindowsAzure
 open Microsoft.WindowsAzure.Diagnostics
 open Microsoft.WindowsAzure.ServiceRuntime
+open Microsoft.FSharp.Compiler.Interactive.Shell
 
 type WorkerRole() =
     inherit RoleEntryPoint() 
@@ -20,8 +22,27 @@ type WorkerRole() =
     override wr.Run() =
 
         log "BotWorkerRole entry point called" "Information"
+
+        let sbOut = new Text.StringBuilder()
+        let sbErr = new Text.StringBuilder()
+        let inStream = new StringReader("")
+        let outStream = new StringWriter(sbOut)
+        let errStream = new StringWriter(sbErr)
+
+        let argv = [| "C:\\fsi.exe" |]
+        let allArgs = Array.append argv [|"--noninteractive"|]
+
+        let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
+        let fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream) 
+        
+        let evalExpression text =
+            match fsiSession.EvalExpression(text) with
+            | Some value -> sprintf "%A" value.ReflectionValue
+            | None -> sprintf "Got no result!"
+
         while(true) do 
             Thread.Sleep(10000)
+            log (evalExpression "1 + 1") "Information"
             log "Working" "Information"
 
     override wr.OnStart() = 
