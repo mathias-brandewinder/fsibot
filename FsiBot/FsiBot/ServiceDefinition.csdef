@@ -4,5 +4,11 @@
     <Imports>
       <Import moduleName="Diagnostics" />
     </Imports>
+    <ConfigurationSettings>
+      <Setting name="APIKey"/>
+      <Setting name="APISecret"/>
+      <Setting name="AccessToken"/>
+      <Setting name="AccessTokenSecret"/>
+    </ConfigurationSettings>
   </WorkerRole>
 </ServiceDefinition>

@@ -11,6 +11,7 @@ open Microsoft.WindowsAzure
 open Microsoft.WindowsAzure.Diagnostics
 open Microsoft.WindowsAzure.ServiceRuntime
 open Microsoft.FSharp.Compiler.Interactive.Shell
+open LinqToTwitter
 
 type WorkerRole() =
     inherit RoleEntryPoint() 
@@ -18,6 +19,11 @@ type WorkerRole() =
     // This is a sample worker implementation. Replace with your logic.
 
     let log message (kind : string) = Trace.TraceInformation(message, kind)
+
+    let apiKey = "APIKey" |> CloudConfigurationManager.GetSetting
+    let apiSecret = "APISecret" |> CloudConfigurationManager.GetSetting 
+    let accessToken = "AccessToken" |> CloudConfigurationManager.GetSetting
+    let accessTokenSecret = "AccessTokenSecret" |> CloudConfigurationManager.GetSetting
 
     override wr.Run() =
 
