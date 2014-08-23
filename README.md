@@ -26,9 +26,9 @@ characters at a time.
 with a rapid feedback cycle: code it, ship it, done. If it doesn't work the 
 first time, just Pivot and try again. This is ALM, made simple. You're welcome.
 
-Credits and thanks for technical and creative help go to:
-@tomaspetricek
-@panesofglass
-@rickasaurus
-@pblasucci
+Credits and thanks for technical and creative help go to:  
+@tomaspetricek  
+@panesofglass  
+@rickasaurus  
+@pblasucci  
 All mistakes and various terrible things are my part!
