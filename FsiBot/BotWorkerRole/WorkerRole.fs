@@ -7,16 +7,19 @@ open System.Diagnostics
 open System.Linq
 open System.Net
 open System.Threading
+open System.Text.RegularExpressions
 open Microsoft.WindowsAzure
 open Microsoft.WindowsAzure.Diagnostics
 open Microsoft.WindowsAzure.ServiceRuntime
 open Microsoft.FSharp.Compiler.Interactive.Shell
 open LinqToTwitter
 
+type Agent<'a> = MailboxProcessor<'a>
+
+type Message = { StatusId:uint64; User:string; Body:string; }
+
 type WorkerRole() =
     inherit RoleEntryPoint() 
-
-    // This is a sample worker implementation. Replace with your logic.
 
     let log message (kind : string) = Trace.TraceInformation(message, kind)
 
@@ -25,38 +28,110 @@ type WorkerRole() =
     let accessToken = "AccessToken" |> CloudConfigurationManager.GetSetting
     let accessTokenSecret = "AccessTokenSecret" |> CloudConfigurationManager.GetSetting
 
+    let mentionsDelay = 1000 * 60 // poll every 1 minute
+    let timeout = 1000 * 30 // up to 30 seconds to run FSI
+    let helpMessage = "send me an F# expression and I'll do my best to evaluate it. #fsharp"
+
     override wr.Run() =
 
         log "BotWorkerRole entry point called" "Information"
 
-        let sbOut = new Text.StringBuilder()
-        let sbErr = new Text.StringBuilder()
-        let inStream = new StringReader("")
-        let outStream = new StringWriter(sbOut)
-        let errStream = new StringWriter(sbErr)
+        let createSession () =
+            let sbOut = new Text.StringBuilder()
+            let sbErr = new Text.StringBuilder()
+            let inStream = new StringReader("")
+            let outStream = new StringWriter(sbOut)
+            let errStream = new StringWriter(sbErr)
 
-        let argv = [| "C:\\fsi.exe" |]
-        let allArgs = Array.append argv [|"--noninteractive"|]
+            let argv = [| "C:\\fsi.exe" |]
+            let allArgs = Array.append argv [|"--noninteractive"|]
 
-        let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
-        let fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream) 
+            let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
+            FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream) 
         
-        let evalExpression text =
-            match fsiSession.EvalExpression(text) with
-            | Some value -> sprintf "%A" value.ReflectionValue
-            | None -> sprintf "Got no result!"
+        let evalExpression (fsiSession:FsiEvaluationSession) expression = 
+            try 
+                match fsiSession.EvalExpression(expression) with
+                | Some value -> sprintf "%A" value.ReflectionValue
+                | None -> sprintf "Evaluation produced nothing."
+            with e -> sprintf "Error: %s" e.Message
 
-        while(true) do 
-            Thread.Sleep(10000)
-            log (evalExpression "1 + 1") "Information"
-            log "Working" "Information"
+        let context = 
+            let credentials = SingleUserInMemoryCredentialStore()
+            credentials.ConsumerKey <- apiKey
+            credentials.ConsumerSecret <- apiSecret
+            credentials.AccessToken <- accessToken
+            credentials.AccessTokenSecret <- accessTokenSecret
+            let authorizer = SingleUserAuthorizer()
+            authorizer.CredentialStore <- credentials
+            new TwitterContext(authorizer)
 
-    override wr.OnStart() = 
+        let respond(msg:Message) =
+            log ("Responding: " + msg.Body) "Information"
+            let fullText = sprintf "@%s %s" msg.User msg.Body
+            let text = 
+                if String.length fullText > 140 
+                then fullText.Substring(0,134) + " [...]"
+                else fullText
+            context.ReplyAsync(msg.StatusId, text) |> ignore
 
-        // Set the maximum number of concurrent connections 
-        ServicePointManager.DefaultConnectionLimit <- 12
-       
-        // For information on handling configuration changes
-        // see the MSDN topic at http://go.microsoft.com/fwlink/?LinkId=166357.
+        let runSession (msg:Message) = 
+            log ("FSI session: " + msg.Body) "Information"
+            let session = createSession ()
+            let evaluate code = async { return evalExpression session code }
+            let result =
+                try Async.RunSynchronously(evaluate (msg.Body), timeout)
+                with 
+                | _ -> 
+                    session.Interrupt ()
+                    "timeout!"            
+            { StatusId = msg.StatusId; User = msg.User; Body = result}
+            |> respond
 
-        base.OnStart()
+        let processMentions (msg:Status) = 
+            log ("Processing: " + msg.Text) "Information"
+            if (msg.Text.Contains("#help"))
+            then respond { StatusId = msg.StatusID; User = msg.User.ScreenNameResponse; Body = helpMessage }
+            else
+                let code = 
+                    Regex.Replace(msg.Text, "@fsibot", "", RegexOptions.IgnoreCase)
+                    |> WebUtility.HtmlDecode
+                { StatusId = msg.StatusID; User = msg.User.ScreenNameResponse; Body = code }
+                |> runSession                  
+
+        let rec pullMentions(sinceId:uint64 Option) =
+            async {
+                let mentions = 
+                    match sinceId with
+                    | None ->
+                        query { 
+                            for tweet in context.Status do 
+                            where (tweet.Type = StatusType.Mentions)
+                            select tweet }
+                    | Some(id) ->
+                        query { 
+                            for tweet in context.Status do 
+                            where (tweet.Type = StatusType.Mentions && tweet.SinceID = id)
+                            where (tweet.StatusID <> id)
+                            select tweet }
+                    |> Seq.toList
+
+                mentions |> List.iter processMentions
+                
+                log (sprintf "Rate remaining %i - waiting" context.RateLimitRemaining) "Information"
+                log (sprintf "Rate current %i - waiting" context.RateLimitCurrent) "Information"
+
+                let sinceId =
+                    match mentions with
+                    | [] -> sinceId
+                    | hd::_ -> hd.StatusID |> Some
+                
+                let delay = 
+                    if (context.RateLimitRemaining > 2)
+                    then mentionsDelay
+                    else (1000 * context.MediaRateLimitReset) + 1000
+                                     
+                do! Async.Sleep delay
+                return! pullMentions (sinceId) }
+
+        pullMentions (None) |> Async.RunSynchronously
