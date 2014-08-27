@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FsiBotService", "FsiBotServ
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsiBot", "FsiBot\FsiBot.fsproj", "{3B3BF407-7DE1-452D-81E3-7A7FCEC3859E}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsiBotHears", "FsiBotHears\FsiBotHears.fsproj", "{DE772EDC-814F-488A-956D-ACB9F8846ABD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FsiBotHearsService", "FsiBotHearsService\FsiBotHearsService.csproj", "{5090FF9E-A322-4BDA-8BF3-AEEB14AEF391}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{3B3BF407-7DE1-452D-81E3-7A7FCEC3859E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3B3BF407-7DE1-452D-81E3-7A7FCEC3859E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3B3BF407-7DE1-452D-81E3-7A7FCEC3859E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE772EDC-814F-488A-956D-ACB9F8846ABD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE772EDC-814F-488A-956D-ACB9F8846ABD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE772EDC-814F-488A-956D-ACB9F8846ABD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE772EDC-814F-488A-956D-ACB9F8846ABD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5090FF9E-A322-4BDA-8BF3-AEEB14AEF391}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5090FF9E-A322-4BDA-8BF3-AEEB14AEF391}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5090FF9E-A322-4BDA-8BF3-AEEB14AEF391}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5090FF9E-A322-4BDA-8BF3-AEEB14AEF391}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

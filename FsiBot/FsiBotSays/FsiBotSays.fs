@@ -1,4 +1,4 @@
-﻿namespace FsiBot
+﻿namespace FsiBotSays
 
 open System
 open System.Configuration
@@ -7,31 +7,24 @@ open System.Threading
 open System.Threading.Tasks
 open System.Text.RegularExpressions
 open System.Net
-open Microsoft.ServiceBus.Messaging
-open Microsoft.FSharp.Compiler.Interactive.Shell
 open LinqToTwitter
 
 type Message = { StatusId:uint64; User:string; Body:string; }
 
 type Bot () = 
-
+    
     let apiKey = "your key goes here"
     let apiSecret = "your secret goes here"
     let accessToken = "your access token goes here"
     let accessTokenSecret = "your access token secret goes here"
     
-    let connection = ""
-    let mentionsQueueName = "mentions"
-    
-    let pingInterval = 1000 // poll every second
+    let pingInterval = 1000 * 60 * 2 // poll every 2 minutes
     let timeout = 1000 * 30 // up to 30 seconds to run FSI
     let helpMessage = "send me an F# expression and I'll do my best to evaluate it. #fsharp"
     let dangerMessage = "this mission is too important for me to allow you to jeopardize it."
 
     member this.Start () =
 
-        let mentionsQueue = QueueClient.CreateFromConnectionString(connection, mentionsQueueName)
-        
         let context = 
             let credentials = SingleUserInMemoryCredentialStore()
             credentials.ConsumerKey <- apiKey
@@ -60,7 +53,7 @@ type Bot () =
                 match fsiSession.EvalExpression(expression) with
                 | Some value -> sprintf "%A" value.ReflectionValue
                 | None -> sprintf "evaluation produced nothing."
-            with e -> sprintf "I'm sorry, I'm afraid I can't do that: %s" e.Message 
+            with e -> sprintf "error: %s" e.Message 
                    
         let respond (msg:Message) =
             let fullText = sprintf "@%s %s" msg.User msg.Body
@@ -70,19 +63,23 @@ type Bot () =
                 else fullText
             context.ReplyAsync(msg.StatusId, text) |> ignore
 
-        let runSession (code:string) =    
+        let runSession (msg:Message) =    
 
             let session = createSession ()
             let source = new CancellationTokenSource()
             let token = source.Token     
             let work = Task.Factory.StartNew<string>(
-                (fun _ -> evalExpression session code), token)
+                (fun _ -> evalExpression session msg.Body), token)
 
-            if work.Wait(timeout)
-            then work.Result
-            else 
-                source.Cancel ()
-                "timeout! I've just picked up a fault in the AE35 unit. It's going to go 100% failure in 72 hours."
+            let result = 
+                if work.Wait(timeout)
+                then work.Result
+                else 
+                    source.Cancel ()
+                    "timeout!"
+
+            { msg with Body = result }
+            |> respond
             
         let removeBotHandle (text:string) =
             Regex.Replace(text, "@fsibot", "", RegexOptions.IgnoreCase)
@@ -94,8 +91,7 @@ type Bot () =
 
         let badBoys = 
             [   "System.IO"
-                "System.Net"
-                "System.Threading" ]
+                "System.Net" ]
         
         let (|Danger|_|) (text:string) =
             if badBoys |> Seq.exists (fun bad -> text.Contains(bad))
@@ -106,45 +102,51 @@ type Bot () =
             then Some(text)
             else None
 
-        let (|Mention|_|) (msg:BrokeredMessage) =
-            match msg with
-            | null -> None
-            | msg ->
-                try
-                    let statusId = msg.Properties.["StatusID"] |> Convert.ToUInt64
-                    let text = msg.Properties.["Text"] |> string
-                    let user = msg.Properties.["Author"] |> string
-                    Some { StatusId = statusId; Body = text; User = user; }
-                with 
-                | _ -> None
-
-        let processMention (text:string) =            
-            match text with
-            | Help _ -> helpMessage
-            | Danger _ -> dangerMessage
+        let preprocessMention (msg:Status) =
+            match (msg.Text) with
+            | Help _ -> respond { StatusId = msg.StatusID; User = msg.User.ScreenNameResponse; Body = helpMessage }
+            | Danger _ -> respond { StatusId = msg.StatusID; User = msg.User.ScreenNameResponse; Body = dangerMessage }
             | _ ->              
-                text
-                |> removeBotHandle
-                |> cleanDoubleSemis
-                |> WebUtility.HtmlDecode
+                let code = 
+                    msg.Text
+                    |> removeBotHandle
+                    |> cleanDoubleSemis
+                    |> WebUtility.HtmlDecode
+                { StatusId = msg.StatusID; User = msg.User.ScreenNameResponse; Body = code }
                 |> runSession
 
-        let rec pullMentions( ) =
-            let mention = mentionsQueue.Receive ()
-            match mention with
-            | Mention tweet -> 
-                let response = 
-                    tweet.Body
-                    |> processMention
-                    |> fun text -> { tweet with Body = text }
-                    |> respond
-                mention.Complete ()
-            | _ -> ignore ()
+        let rec pullMentions(sinceId:uint64 Option) =
+            let mentions = 
+                match sinceId with
+                | None ->
+                    query { 
+                        for tweet in context.Status do 
+                        where (tweet.Type = StatusType.Mentions)
+                        select tweet }
+                | Some(id) ->
+                    query { 
+                        for tweet in context.Status do 
+                        where (tweet.Type = StatusType.Mentions && tweet.SinceID = id)
+                        where (tweet.StatusID <> id)
+                        select tweet }
+                |> Seq.toList
 
-            Thread.Sleep pingInterval
-            pullMentions ()
+            mentions |> List.iter preprocessMention
+
+            let sinceId =
+                match mentions with
+                | [] -> sinceId
+                | hd::_ -> hd.StatusID |> Some
+                
+            let delay = 
+                if (context.RateLimitRemaining > 5)
+                then pingInterval
+                else (1000 * context.MediaRateLimitReset) + 1000
+                                     
+            Thread.Sleep delay
+            pullMentions sinceId
 
         // start the loop
-        pullMentions () |> ignore
+        pullMentions None |> ignore
 
     member this.Stop () = ignore ()
