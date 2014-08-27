@@ -22,6 +22,7 @@ type Bot () =
     let pingInterval = 1000 * 60 * 2 // poll every 2 minutes
     let timeout = 1000 * 30 // up to 30 seconds to run FSI
     let helpMessage = "send me an F# expression and I'll do my best to evaluate it. #fsharp"
+    let dangerMessage = "this mission is too important for me to allow you to jeopardize it."
 
     member this.Start () =
 
@@ -80,16 +81,40 @@ type Bot () =
 
             { msg with Body = result }
             |> respond
-                        
-        let preprocessMention (msg:Status) = 
-            if (msg.Text.Contains("#help"))
-            then respond { StatusId = msg.StatusID; User = msg.User.ScreenNameResponse; Body = helpMessage }
-            else
+            
+        let removeBotHandle (text:string) =
+            Regex.Replace(text, "@fsibot", "", RegexOptions.IgnoreCase)
+                 
+        let cleanDoubleSemis (text:string) =
+            if text.EndsWith ";;" 
+            then text.Substring (0, text.Length - 2)
+            else text
+
+        let badBoys = 
+            [   "System.IO"
+                "System.Net" ]
+        
+        let (|Danger|_|) (text:string) =
+            if badBoys |> Seq.exists (fun bad -> text.Contains(bad))
+            then Some(text) else None
+
+        let (|Help|_|) (text:string) =
+            if (text.Contains("#help"))
+            then Some(text)
+            else None
+
+        let preprocessMention (msg:Status) =
+            match (msg.Text) with
+            | Help _ -> respond { StatusId = msg.StatusID; User = msg.User.ScreenNameResponse; Body = helpMessage }
+            | Danger _ -> respond { StatusId = msg.StatusID; User = msg.User.ScreenNameResponse; Body = dangerMessage }
+            | _ ->              
                 let code = 
-                    Regex.Replace(msg.Text, "@fsibot", "", RegexOptions.IgnoreCase)
+                    msg.Text
+                    |> removeBotHandle
+                    |> cleanDoubleSemis
                     |> WebUtility.HtmlDecode
                 { StatusId = msg.StatusID; User = msg.User.ScreenNameResponse; Body = code }
-                |> runSession                
+                |> runSession
 
         let rec pullMentions(sinceId:uint64 Option) =
             let mentions = 
