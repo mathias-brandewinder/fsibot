@@ -95,6 +95,7 @@ type Bot () =
         let badBoys = 
             [   "System.IO"
                 "System.Net"
+                "System.Reflection"
                 "System.Threading" ]
         
         let (|Danger|_|) (text:string) =
