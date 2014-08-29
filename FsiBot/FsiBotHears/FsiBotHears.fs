@@ -8,7 +8,7 @@ open System.Threading.Tasks
 open System.Text.RegularExpressions
 open System.Net
 open LinqToTwitter
-open Microsoft.ServiceBus
+open Microsoft.WindowsAzure
 open Microsoft.ServiceBus.Messaging
 
 type Message = { StatusId:uint64; User:string; Body:string; }
@@ -20,7 +20,7 @@ type Listener () =
     let accessToken = "your access token goes here"
     let accessTokenSecret = "your access token secret goes here"
     
-    let connection = "your connection string goes here"
+    let connection = "you connection string goes here"
     let queueName = "mentions"
 
     let pingInterval = 1000 * 60 * 2 // poll every 2 minutes

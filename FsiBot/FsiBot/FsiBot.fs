@@ -1,7 +1,6 @@
 ﻿namespace FsiBot
 
 open System
-open System.Configuration
 open System.IO
 open System.Threading
 open System.Threading.Tasks
@@ -20,7 +19,7 @@ type Bot () =
     let accessToken = "your access token goes here"
     let accessTokenSecret = "your access token secret goes here"
     
-    let connection = ""
+    let connection = "you connection string goes here"
     let mentionsQueueName = "mentions"
     
     let pingInterval = 1000 // poll every second
@@ -91,11 +90,17 @@ type Bot () =
             if text.EndsWith ";;" 
             then text.Substring (0, text.Length - 2)
             else text
-
+        
         let badBoys = 
             [   "System.IO"
                 "System.Net"
-                "System.Threading" ]
+                "System.Threading"
+                "System.Reflection"
+                "System.Diagnostics"
+                "Console."
+                "System.Environment"
+                "System.AppDomain"
+                "Microsoft." ]
         
         let (|Danger|_|) (text:string) =
             if badBoys |> Seq.exists (fun bad -> text.Contains(bad))
@@ -133,11 +138,10 @@ type Bot () =
             let mention = mentionsQueue.Receive ()
             match mention with
             | Mention tweet -> 
-                let response = 
-                    tweet.Body
-                    |> processMention
-                    |> fun text -> { tweet with Body = text }
-                    |> respond
+                tweet.Body
+                |> processMention
+                |> fun text -> { tweet with Body = text }
+                |> respond
                 mention.Complete ()
             | _ -> ignore ()
 
