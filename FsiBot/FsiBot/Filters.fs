@@ -15,7 +15,7 @@ module Filters =
         "Microsoft." ]     
            
     let (|Danger|_|) (text:string) =
-        if badBoys |> Seq.exists (fun bad -> text.Contains(bad))
+        if badBoys |> Seq.exists (fun bad -> text.Replace(" ","").Contains(bad))
         then Some(text) else None
 
     let (|Help|_|) (text:string) =

