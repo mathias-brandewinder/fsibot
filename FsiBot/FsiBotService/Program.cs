@@ -20,7 +20,7 @@ namespace FsiBotService
                                s.WhenStarted(bot => bot.Start());              
                                s.WhenStopped(bot => bot.Stop());               
                             });
-
+                        
                         x.RunAsLocalSystem();
                         x.StartAutomatically();
                         x.EnableServiceRecovery(s =>

@@ -1,14 +1,13 @@
 ﻿namespace FsiBot
 
 open System
-open System.IO
 open System.Threading
-open System.Threading.Tasks
 open System.Text.RegularExpressions
 open System.Net
 open Microsoft.ServiceBus.Messaging
-open Microsoft.FSharp.Compiler.Interactive.Shell
 open LinqToTwitter
+open FsiBot.SessionRunner
+open FsiBot.Filters
 
 type Message = { StatusId:uint64; User:string; Body:string; }
 
@@ -23,7 +22,6 @@ type Bot () =
     let mentionsQueueName = "mentions"
     
     let pingInterval = 1000 // poll every second
-    let timeout = 1000 * 30 // up to 30 seconds to run FSI
     let helpMessage = "send me an F# expression and I'll do my best to evaluate it. #fsharp"
     let dangerMessage = "this mission is too important for me to allow you to jeopardize it."
 
@@ -40,27 +38,7 @@ type Bot () =
             let authorizer = SingleUserAuthorizer()
             authorizer.CredentialStore <- credentials
             new TwitterContext(authorizer)
-
-        let createSession () =
-            let sbOut = new Text.StringBuilder()
-            let sbErr = new Text.StringBuilder()
-            let inStream = new StringReader("")
-            let outStream = new StringWriter(sbOut)
-            let errStream = new StringWriter(sbErr)
-
-            let argv = [| "C:\\fsi.exe" |]
-            let allArgs = Array.append argv [|"--noninteractive"|]
-
-            let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
-            FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream) 
-                    
-        let evalExpression (fsiSession:FsiEvaluationSession) expression = 
-            try 
-                match fsiSession.EvalExpression(expression) with
-                | Some value -> sprintf "%A" value.ReflectionValue
-                | None -> sprintf "evaluation produced nothing."
-            with e -> sprintf "I'm sorry, I'm afraid I can't do that: %s" e.Message 
-                   
+                                       
         let respond (msg:Message) =
             let fullText = sprintf "@%s %s" msg.User msg.Body
             let text = 
@@ -68,20 +46,6 @@ type Bot () =
                 then fullText.Substring(0,134) + " [...]"
                 else fullText
             context.ReplyAsync(msg.StatusId, text) |> ignore
-
-        let runSession (code:string) =    
-
-            let session = createSession ()
-            let source = new CancellationTokenSource()
-            let token = source.Token     
-            let work = Task.Factory.StartNew<string>(
-                (fun _ -> evalExpression session code), token)
-
-            if work.Wait(timeout)
-            then work.Result
-            else 
-                source.Cancel ()
-                "timeout! I've just picked up a fault in the AE35 unit. It's going to go 100% failure in 72 hours."
             
         let removeBotHandle (text:string) =
             Regex.Replace(text, "@fsibot", "", RegexOptions.IgnoreCase)
@@ -91,21 +55,6 @@ type Bot () =
             then text.Substring (0, text.Length - 2)
             else text
         
-        let badBoys = 
-            [   "System.IO"
-                "System.Net"
-                "System.Threading"
-                "System.Reflection"
-                "System.Diagnostics"
-                "Console."
-                "System.Environment"
-                "System.AppDomain"
-                "Microsoft." ]
-        
-        let (|Danger|_|) (text:string) =
-            if badBoys |> Seq.exists (fun bad -> text.Contains(bad))
-            then Some(text) else None
-
         let (|Help|_|) (text:string) =
             if (text.Contains("#help"))
             then Some(text)
@@ -132,7 +81,7 @@ type Bot () =
                 |> removeBotHandle
                 |> cleanDoubleSemis
                 |> WebUtility.HtmlDecode
-                |> runSession
+                |> runSession timeout
 
         let rec pullMentions( ) =
             let mention = mentionsQueue.Receive ()

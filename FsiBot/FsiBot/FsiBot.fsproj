@@ -79,6 +79,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Filters.fs" />
+    <Compile Include="SessionRunner.fs" />
     <Compile Include="FsiBot.fs" />
     <None Include="packages.config" />
     <None Include="app.config" />

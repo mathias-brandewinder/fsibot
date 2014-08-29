@@ -1,14 +1,7 @@
 ﻿namespace FsiBotHears
 
-open System
-open System.Configuration
-open System.IO
 open System.Threading
-open System.Threading.Tasks
-open System.Text.RegularExpressions
-open System.Net
 open LinqToTwitter
-open Microsoft.WindowsAzure
 open Microsoft.ServiceBus.Messaging
 
 type Message = { StatusId:uint64; User:string; Body:string; }
