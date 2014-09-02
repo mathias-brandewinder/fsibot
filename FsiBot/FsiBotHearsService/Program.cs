@@ -26,7 +26,6 @@ namespace FsiBotHearsService
                 x.EnableServiceRecovery(s =>
                 {
                     s.RestartService(2);
-                    s.RestartComputer(10, "restarting machine.");
                 });
 
                 x.SetDescription("FSI bot listener");

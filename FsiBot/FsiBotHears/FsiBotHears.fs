@@ -40,25 +40,38 @@ type Listener () =
             msg.Properties.["Author"] <- status.User.ScreenNameResponse
             queue.Send msg
                                  
-        let rec pullMentions() =
+        let rec pullMentions(sinceId:uint64 Option) =
             let mentions = 
-                query { 
-                    for tweet in context.Status do 
-                    where (tweet.Type = StatusType.Mentions)
-                    select tweet }
+                match sinceId with
+                | None ->
+                    query { 
+                        for tweet in context.Status do 
+                        where (tweet.Type = StatusType.Mentions)
+                        select tweet }
+                | Some(id) ->
+                    query { 
+                        for tweet in context.Status do 
+                        where (tweet.Type = StatusType.Mentions && tweet.SinceID = id)
+                        where (tweet.StatusID <> id)
+                        select tweet }
                 |> Seq.toList
 
             mentions |> List.iter queueMention
-                
+
+            let sinceId =
+                match mentions with
+                | [] -> sinceId
+                | hd::_ -> hd.StatusID |> Some
+                                
             let delay = 
                 if (context.RateLimitRemaining > 5)
                 then pingInterval
                 else (1000 * context.MediaRateLimitReset) + 1000
                                      
             Thread.Sleep delay
-            pullMentions ()
+            pullMentions (sinceId)
 
         // start the loop
-        pullMentions () |> ignore
+        pullMentions None |> ignore
 
     member this.Stop () = ignore ()
