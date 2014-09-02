@@ -2,14 +2,9 @@
 
 open System
 open System.Threading
-open System.Text.RegularExpressions
-open System.Net
 open Microsoft.ServiceBus.Messaging
 open LinqToTwitter
 open FsiBot.SessionRunner
-open FsiBot.Filters
-
-type Message = { StatusId:uint64; User:string; Body:string; }
 
 type Bot () = 
 
@@ -22,8 +17,6 @@ type Bot () =
     let mentionsQueueName = "mentions"
     
     let pingInterval = 1000 // poll every second
-    let helpMessage = "send me an F# expression and I'll do my best to evaluate it. #fsharp"
-    let dangerMessage = "this mission is too important for me to allow you to jeopardize it."
 
     member this.Start () =
 
@@ -40,26 +33,13 @@ type Bot () =
             new TwitterContext(authorizer)
                                        
         let respond (msg:Message) =
-            let fullText = sprintf "@%s %s" msg.User msg.Body
+            let fullText = msg.Body
             let text = 
                 if String.length fullText > 140 
                 then fullText.Substring(0,134) + " [...]"
                 else fullText
             context.ReplyAsync(msg.StatusId, text) |> ignore
-            
-        let removeBotHandle (text:string) =
-            Regex.Replace(text, "@fsibot", "", RegexOptions.IgnoreCase)
-                 
-        let cleanDoubleSemis (text:string) =
-            if text.EndsWith ";;" 
-            then text.Substring (0, text.Length - 2)
-            else text
-        
-        let (|Help|_|) (text:string) =
-            if (text.Contains("#help"))
-            then Some(text)
-            else None
-
+                    
         let (|Mention|_|) (msg:BrokeredMessage) =
             match msg with
             | null -> None
@@ -72,24 +52,13 @@ type Bot () =
                 with 
                 | _ -> None
 
-        let processMention (text:string) =            
-            match text with
-            | Help _ -> helpMessage
-            | Danger _ -> dangerMessage
-            | _ ->              
-                text
-                |> removeBotHandle
-                |> cleanDoubleSemis
-                |> WebUtility.HtmlDecode
-                |> runSession timeout
-
         let rec pullMentions( ) =
             let mention = mentionsQueue.Receive ()
             match mention with
             | Mention tweet -> 
                 tweet.Body
                 |> processMention
-                |> fun text -> { tweet with Body = text }
+                |> composeResponse tweet
                 |> respond
                 mention.Complete ()
             | _ -> ignore ()
