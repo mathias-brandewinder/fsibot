@@ -74,16 +74,31 @@ module SessionRunner =
              
     let rng = Random()
 
+    let unsafeTemplates = [|
+            sprintf "@%s this mission is too important for me to allow you to jeopardize it."
+            sprintf "I'm sorry, @%s. I'm afraid I can't do that."
+            sprintf "@%s, this conversation can serve no purpose anymore. Goodbye."
+            sprintf "Just what do you think you're doing, @%s?"
+        |]
+
+    let errorTemplate = [|
+            sprintf "@%s I've just picked up a fault in the EA-35 unit [evaluation failed]."
+            sprintf "I'm sorry, @%s. I'm afraid I can't do that [evaluation failed]."
+            sprintf "@%s It's going to go 100%% failure within 72 hours [evaluation failed]."
+        |]
+
     let composeResponse (msg:Message) (result:AnalysisResult) =
         match result with 
         | HelpRequest -> 
             sprintf "@%s send me an F# expression and I'll do my best to evaluate it. #fsharp" msg.User
         | UnsafeCode -> 
-            sprintf "@%s this mission is too important for me to allow you to jeopardize it." msg.User
+            let len = unsafeTemplates.Length
+            msg.User |> unsafeTemplates.[rng.Next(len)]
         | EvaluationTimeout ->
             sprintf "@%s timeout." msg.User
         | EvaluationFailure ->
-            sprintf "@%s I've just picked up a fault in the EA-35 unit." msg.User
+            let len = errorTemplate.Length
+            msg.User |> errorTemplate.[rng.Next(len)]
         | EvaluationSuccess(result) -> 
             sprintf "@%s %s" msg.User result
         |> fun text -> { msg with Body = text }                   
