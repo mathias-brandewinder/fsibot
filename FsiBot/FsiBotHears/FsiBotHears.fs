@@ -3,6 +3,7 @@
 open System.Threading
 open LinqToTwitter
 open Microsoft.ServiceBus.Messaging
+open Microsoft.WindowsAzure.Storage
 
 type Message = { StatusId:uint64; User:string; Body:string; }
 
@@ -13,8 +14,12 @@ type Listener () =
     let accessToken = "your access token goes here"
     let accessTokenSecret = "your access token secret goes here"
     
-    let connection = "you connection string goes here"
+    let queueConnection = "you connection string goes here"
+    let blobConnection = "you blob connection goes here"
+
     let queueName = "mentions"
+    let containerName = "lastmention"
+    let blobName = "lastID"
 
     let pingInterval = 1000 * 60 * 2 // poll every 2 minutes
 
@@ -30,7 +35,25 @@ type Listener () =
             authorizer.CredentialStore <- credentials
             new TwitterContext(authorizer)
         
-        let queue = QueueClient.CreateFromConnectionString(connection, queueName)
+        let mentionsQueue = QueueClient.CreateFromConnectionString(queueConnection, queueName)
+
+        let container = 
+            let account = CloudStorageAccount.Parse blobConnection
+            let client = account.CreateCloudBlobClient ()
+            client.GetContainerReference containerName
+
+        let updateLastID (ID:uint64) =
+            let lastmention = container.GetBlockBlobReference blobName
+            ID |> string |> lastmention.UploadText
+
+        let readLastID () =
+            let lastmention = container.GetBlockBlobReference blobName
+            if lastmention.Exists ()
+            then 
+                lastmention.DownloadText () 
+                |> System.Convert.ToUInt64
+                |> Some
+            else None
 
         let queueMention (status:Status) =
             let msg = new BrokeredMessage ()
@@ -38,11 +61,12 @@ type Listener () =
             msg.Properties.["StatusID"] <- status.StatusID
             msg.Properties.["Text"] <- status.Text
             msg.Properties.["Author"] <- status.User.ScreenNameResponse
-            queue.Send msg
+            mentionsQueue.Send msg
                                  
-        let rec pullMentions(sinceId:uint64 Option) =
+        let rec pullMentions(sinceID:uint64 Option) =
+
             let mentions = 
-                match sinceId with
+                match sinceID with
                 | None ->
                     query { 
                         for tweet in context.Status do 
@@ -58,20 +82,27 @@ type Listener () =
 
             mentions |> List.iter queueMention
 
-            let sinceId =
+            let updatedSinceID =
                 match mentions with
-                | [] -> sinceId
+                | [] -> sinceID
                 | hd::_ -> hd.StatusID |> Some
-                                
+                     
+            if (updatedSinceID <> sinceID) 
+            then 
+                match updatedSinceID with
+                | None -> ignore ()
+                | Some(ID) -> updateLastID ID      
+                
             let delay = 
                 if (context.RateLimitRemaining > 5)
                 then pingInterval
                 else (1000 * context.MediaRateLimitReset) + 1000
                                      
             Thread.Sleep delay
-            pullMentions (sinceId)
+            pullMentions (updatedSinceID)
 
         // start the loop
-        pullMentions None |> ignore
+        let startID = readLastID ()
+        pullMentions startID |> ignore
 
     member this.Stop () = ignore ()
