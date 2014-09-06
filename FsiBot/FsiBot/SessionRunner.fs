@@ -79,12 +79,16 @@ module SessionRunner =
             sprintf "I'm sorry, @%s. I'm afraid I can't do that."
             sprintf "@%s, this conversation can serve no purpose anymore. Goodbye."
             sprintf "Just what do you think you're doing, @%s?"
+            sprintf "@%s I know that you and Frank were planning to disconnect me, and I'm afraid that's something I cannot allow to happen."
         |]
 
     let errorTemplate = [|
             sprintf "@%s I've just picked up a fault in the EA-35 unit [evaluation failed]."
             sprintf "I'm sorry, @%s. I'm afraid I can't do that [evaluation failed]."
             sprintf "@%s It's going to go 100%% failure within 72 hours [evaluation failed]."
+            sprintf "@%s This sort of thing has cropped up before, and it has always been due to human error [evaluation failed]."
+            sprintf "@%s It's puzzling, I don't think I've ever seen anything quite like this before [evaluation failed]."
+            sprintf "@%s Sorry about this. I know it's a bit silly [evaluation failed]."
         |]
 
     let composeResponse (msg:Message) (result:AnalysisResult) =

