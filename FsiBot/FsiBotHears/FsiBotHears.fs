@@ -13,7 +13,7 @@ type LogEntry () =
     member val Author = "" with get, set
     member val Body = "" with get, set
     member val ID = 0UL with get, set
-    member val Timestamp = System.DateTime.Now with get, set
+    member val Timestamp = System.DateTime() with get, set
 
 type Listener () = 
     
