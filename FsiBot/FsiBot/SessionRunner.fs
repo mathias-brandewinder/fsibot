@@ -94,7 +94,7 @@ module SessionRunner =
     let composeResponse (msg:Message) (result:AnalysisResult) =
         match result with 
         | HelpRequest -> 
-            sprintf "@%s send me an F# expression and I'll do my best to evaluate it. #fsharp" msg.User
+            sprintf "@%s send me an F# expression and I'll do my best to evaluate it; see http://bit.ly/fsibot101 for more. #fsharp" msg.User
         | UnsafeCode -> 
             let len = unsafeTemplates.Length
             msg.User |> unsafeTemplates.[rng.Next(len)]
