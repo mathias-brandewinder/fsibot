@@ -49,10 +49,20 @@ and if is a valid F# expression, fsibot will evaluate it and reply to you with t
 <a name="caveats-and-limitations" class="anchor" href="#caveats-and-limitations"><span class="octicon octicon-link"></span></a>Caveats and limitations</h3>
 
 <p>
-fsibot evaluates expressions only. As a result, using <em>printfn</em> in your exchanges with @fsibot will probably not work as expected.</p>
+fsibot evaluates expressions only. As a result, using <em>printfn</em> in your exchanges with @fsibot will probably not work as expected,
+because <em>printfn</em> pretty-prints as a side effects, but evaluates to unit.</p>
+<pre><code>
+> printfn "%s" "Hello, world";;
+Hello, world
+val it : unit = ()
+</code></pre>
+<p>Typically using <em>printfn</em> will result in a dreaded <null>:</null></p>
 <p><blockquote class="twitter-tweet" lang="en"><p><a href="https://twitter.com/panesofglass">@panesofglass</a> &lt;null&gt;</p>&mdash; fsibot (@fsibot) <a href="https://twitter.com/fsibot/status/502995216068931584">August 23, 2014</a></blockquote> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script></p> 
-<p>If you use <em>sprintf</em> instead, you can now dazzle your interviewer next time, and produce FizzBuzz, twitter-sized, from your cell phone:</p>
+<p>If you use <em>sprintf</em> instead, you can now ace your next interview, and dazzle the audience, with a twitter-sized FizzBuzz implementation, right from your cell phone:</p>
 <p><blockquote class="twitter-tweet" lang="en"><p><a href="https://twitter.com/ashtonkj">@ashtonkj</a> [&quot;1&quot;; &quot;2&quot;; &quot;Fizz&quot;; &quot;4&quot;; &quot;Buzz&quot;; &quot;Fizz&quot;; &quot;7&quot;; &quot;8&quot;; &quot;Fizz&quot;; &quot;Buzz&quot;; &quot;11&quot;; &quot;Fizz&quot;;&#10; &quot;13&quot;; &quot;14&quot;; &quot;FizzBuzz&quot;; &quot;16&quot;; &quot;17&quot;; &quot;Fizz&quot;; [...]</p>&mdash; fsibot (@fsibot) <a href="https://twitter.com/fsibot/status/504028128428036096">August 25, 2014</a></blockquote> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script></p>
+
+
+
 
 	  </section>
 	  
