@@ -84,7 +84,7 @@ module SessionRunner =
 
     let errorTemplate = [|
             sprintf "@%s I've just picked up a fault in the EA-35 unit [evaluation failed]."
-            sprintf "I'm sorry, @%s. I'm afraid I can't do that [evaluation failed]."
+            sprintf "@%s I'm sorry, I'm afraid I can't do that [evaluation failed]."
             sprintf "@%s It's going to go 100%% failure within 72 hours [evaluation failed]."
             sprintf "@%s This sort of thing has cropped up before, and it has always been due to human error [evaluation failed]."
             sprintf "@%s It's puzzling, I don't think I've ever seen anything quite like this before [evaluation failed]."
@@ -104,5 +104,5 @@ module SessionRunner =
             let len = errorTemplate.Length
             msg.User |> errorTemplate.[rng.Next(len)]
         | EvaluationSuccess(result) -> 
-            sprintf "@%s %s" msg.User result
+            sprintf ".@%s %s" msg.User result
         |> fun text -> { msg with Body = text }                   
