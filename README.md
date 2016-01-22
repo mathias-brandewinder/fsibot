@@ -26,6 +26,16 @@ characters at a time.
 with a rapid feedback cycle: code it, ship it, done. If it doesn't work the 
 first time, just Pivot and try again. This is ALM, made simple. You're welcome.
 
+**Some favorites**
+
+* @djidja8: [chess](https://twitter.com/fsibot/status/514182645689769984)
+* @functional_S: [smoke](https://twitter.com/fsibot/status/507832821482668032)
+* @ptrelford: [cards](https://twitter.com/fsibot/status/506202011423895553)
+* @mavnn: [quotations](https://twitter.com/fsibot/status/504619203261763584)
+* @tomaspetricek: [xmas](https://twitter.com/fsibot/status/504028116608512000)
+* @blaise_v: [pi](https://twitter.com/fsibot/status/504187726732607488)
+* @brandewinder: [F#](https://twitter.com/fsibot/status/508394495688183808)
+
 Credits and thanks for technical and creative help go to:  
 @tomaspetricek  
 @panesofglass  
