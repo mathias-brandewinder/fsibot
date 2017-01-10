@@ -1,6 +1,12 @@
 fsibot
 ======
 
+> Jan 10, 2017: I have converted @fsibot to Azure Functions. 
+> Rather than retiring it, I'll keep this repository up, in case it's useful to anyone.
+> However, if you are interested in following the project evolution, 
+> the code will now live at:
+> https://github.com/mathias-brandewinder/fsibot-serverless
+
 fsibot, based on the capabilities of F# and Twitter with additional cloud services, 
 is the online home for your development projects. Get up and running in minutes on 
 our cloud infrastructure without having to install or configure a single server. 
